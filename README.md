@@ -37,15 +37,23 @@ hhkb-topre-hhkb-style-hhkb-us-11-types-fit-nominal.3mf
 
 ## 使用方法
 
-如果只想打印，直接打开 `output/` 中的 `.3mf` 文件即可。
+如果已经生成过模型，直接打开 `output/` 中的 `.3mf` 文件即可。
 
 如果需要重新生成模型：
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv venv .venv
-UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
-.venv/bin/python cad/hhkb_topre_1u_keycap.py
+UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python -r requirements.txt
+.venv/bin/python cad/hhkb_topre_keycaps.py
 ```
+
+`cadquery` 会下载 `cadquery-ocp`、`casadi` 等较大的 wheel，首次安装可能较慢。国内网络可以先临时切换 PyPI 镜像，例如：
+
+```bash
+UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python -r requirements.txt --default-index https://mirrors.aliyun.com/pypi/simple/
+```
+
+如果镜像不可用，去掉 `--default-index ...` 使用官方 PyPI；保留 `UV_CACHE_DIR=.uv-cache` 可以让后续安装复用本项目缓存。
 
 生成完成后会得到：
 
@@ -54,7 +62,7 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 
 合集文件 `hhkb-topre-hhkb-style-hhkb-us-11-types-fit-nominal.3mf` 会把 11 种几何类型按行排在同一个 3MF 中，适合一次性导入或批量摆盘检查。
 
-`output/` 是生成产物，已在 `.gitignore` 中排除；仓库只跟踪生成脚本和说明文档。
+`output/` 是生成产物，已在 `.gitignore` 中排除；仓库只跟踪生成脚本、依赖声明和说明文档。
 
 ## 打印建议
 
@@ -84,7 +92,7 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 
 `KeyV2` 里的 `spacebar()` / `stabilized()` 是 Cherry/Costar 稳定器体系，默认给宽键添加 MX/Costar 位置和接口，不是 Topre HHKB 原厂稳定器。为避免生成错误接口，当前不会把 KeyV2 的 Cherry/Costar 稳定器直接套进 Topre 模型。
 
-如果 `fit-nominal` 偏松或偏紧，优先调整 `cad/hhkb_topre_1u_keycap.py` 里的 connector 参数或 `FIT_VARIANTS`，不要先改外形。
+如果 `fit-nominal` 偏松或偏紧，优先调整 `cad/hhkb_topre_keycaps.py` 里的 connector 参数或 `FIT_VARIANTS`，不要先改外形。
 
 ## 来源与许可
 
