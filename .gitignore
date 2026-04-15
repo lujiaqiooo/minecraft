@@ -4,4 +4,4 @@
 .venv/
 __pycache__/
 *.pyc
-output/*.tmp.3mf
+output/
