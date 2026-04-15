@@ -149,9 +149,7 @@ HHKB_SHAPES = {
 
 
 FIT_VARIANTS = {
-    "fit-tight": -0.05,
     "fit-nominal": 0.00,
-    "fit-loose": 0.05,
 }
 
 
@@ -475,7 +473,7 @@ def write_manifest(specs: list[KeycapSpec], manifest: list[dict[str, float | str
         "variants": manifest,
         "notes": [
             "Exports include HHKB common key shapes adapted from fernandodeperto/topre_key dimensions.",
-            "The three variants only change the Topre connector clearance.",
+            "Each HHKB US geometry is exported once with nominal Topre connector clearance.",
             "fernandodeperto/topre_key only implements one centered Topre connector; wide keys follow that scope and do not add OEM HHKB stabilizers.",
             "KeyV2 stabilized wide-key helpers target Cherry/Costar stabilizers and are intentionally not mixed into this Topre connector model.",
             "3MF vertices are welded after export to avoid non-manifold imports in Bambu Studio.",

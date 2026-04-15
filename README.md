@@ -6,17 +6,15 @@
 
 ## 输出内容
 
-脚本会为每种键帽形状导出三档 connector 试配版本：
+脚本会为每种键帽形状导出一个标准 connector 配合版本：
 
-- `fit-loose`：最松，建议第一个试打
 - `fit-nominal`：标准尺寸
-- `fit-tight`：最紧
 
-每一档只改变 Topre connector 的配合余量，外形不变。生成后的 3MF 会自动焊接重复顶点，避免 Bambu Studio 报非流形边。
+生成后的 3MF 会自动焊接重复顶点，避免 Bambu Studio 报非流形边。
 
 ## 支持的键帽形状
 
-当前会生成 HHKB US 配列需要的 11 种几何类型。每种类型导出 `fit-loose`、`fit-nominal`、`fit-tight` 三档试配版，因此本地 `output/` 里会生成 33 个 `.3mf` 文件。
+当前会生成 HHKB US 配列需要的 11 种几何类型。每种类型导出一个 `fit-nominal` 标准版，因此本地 `output/` 里会生成 11 个 `.3mf` 文件。
 
 - `row-e-1u`：顶排 Esc / 数字 / 符号区 1u
 - `row-d-1u`：QWERTY 排普通 1u
@@ -65,7 +63,7 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 - 顶/底层：建议 `5 / 4`
 - 支撑：首轮建议关闭
 - 摆放方向：键帽顶部朝上
-- 试配顺序：先 `fit-loose`，再 `fit-nominal`，最后 `fit-tight`
+- 试配版本：`fit-nominal`
 
 ## 设计参数
 
@@ -83,7 +81,7 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 
 `KeyV2` 里的 `spacebar()` / `stabilized()` 是 Cherry/Costar 稳定器体系，默认给宽键添加 MX/Costar 位置和接口，不是 Topre HHKB 原厂稳定器。为避免生成错误接口，当前不会把 KeyV2 的 Cherry/Costar 稳定器直接套进 Topre 模型。
 
-如果三档试配都偏松或偏紧，优先调整 `cad/hhkb_topre_1u_keycap.py` 里的 connector 参数或 `FIT_VARIANTS`，不要先改外形。
+如果 `fit-nominal` 偏松或偏紧，优先调整 `cad/hhkb_topre_1u_keycap.py` 里的 connector 参数或 `FIT_VARIANTS`，不要先改外形。
 
 ## 来源与许可
 
