@@ -233,18 +233,24 @@ def make_outer_shell(spec: KeycapSpec) -> cq.Workplane:
 
 
 def make_inner_cavity(spec: KeycapSpec) -> cq.Workplane:
-    key_scale = (spec.bottom_width - (2 * spec.wall_thickness)) / spec.bottom_width
-    y_offset = spec.wall_thickness + (key_scale * spec.bottom_depth / 2) - (spec.bottom_depth / 2)
+    inner_height_back = max(0.20, spec.height - spec.roof_thickness)
+    inner_front_tangent = tand(spec.front_angle)
+    inner_top_tangent = tand(spec.top_angle)
+    inner_top_base_length = (
+        (spec.inner_bottom_depth * inner_front_tangent) - inner_height_back
+    ) / (inner_front_tangent - inner_top_tangent)
+    inner_top_base_rotated_length = inner_top_base_length / cosd(spec.top_angle)
+    inner_top_base_translate = inner_height_back / tand(spec.bottom_base_angle_back)
+
     return topre_key_loft(
-        bottom_width=spec.bottom_width * key_scale,
-        bottom_depth=spec.bottom_depth * key_scale,
-        top_width=spec.outer_top_width * key_scale,
-        top_depth=spec.top_base_rotated_length * key_scale,
-        top_base_translate=spec.top_base_translate * key_scale,
-        top_base_height_back=spec.height * key_scale,
+        bottom_width=spec.inner_bottom_width,
+        bottom_depth=spec.inner_bottom_depth,
+        top_width=max(1.00, spec.outer_top_width - (2 * spec.wall_thickness)),
+        top_depth=max(1.00, inner_top_base_rotated_length),
+        top_base_translate=inner_top_base_translate,
+        top_base_height_back=inner_height_back,
         top_base_angle=spec.top_angle,
-        corner_radius=max(0.35, spec.outer_corner_radius * key_scale),
-        y_offset=y_offset,
+        corner_radius=spec.inner_corner_radius,
         z_offset=0.00,
     )
 
