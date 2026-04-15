@@ -1,0 +1,7 @@
+.DS_Store
+.cache/
+.uv-cache/
+.venv/
+__pycache__/
+*.pyc
+output/*.tmp.3mf
