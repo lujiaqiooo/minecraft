@@ -14,7 +14,7 @@
 
 ## 支持的键帽形状
 
-当前会生成 HHKB US 配列需要的 11 种几何类型。每种类型导出一个 `fit-nominal` 标准版，因此本地 `output/` 里会生成 11 个 `.3mf` 文件。
+当前会生成 HHKB US 配列需要的 11 种几何类型。每种类型导出一个 `fit-nominal` 标准版，因此本地 `output/` 里会生成 11 个单键 `.3mf` 文件，并额外生成 1 个包含全部 11 种键帽的合集 `.3mf` 文件。
 
 - `row-e-1u`：顶排 Esc / 数字 / 符号区 1u
 - `row-d-1u`：QWERTY 排普通 1u
@@ -32,6 +32,7 @@
 
 ```text
 hhkb-topre-hhkb-style-space-6u-row-a-fit-nominal.3mf
+hhkb-topre-hhkb-style-hhkb-us-11-types-fit-nominal.3mf
 ```
 
 ## 使用方法
@@ -50,6 +51,8 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 
 - `output/*.3mf`：可导入 Bambu Studio / OrcaSlicer 的模型文件
 - `output/hhkb-topre-hhkb-style-manifest.json`：本次导出的参数和文件清单
+
+合集文件 `hhkb-topre-hhkb-style-hhkb-us-11-types-fit-nominal.3mf` 会把 11 种几何类型按行排在同一个 3MF 中，适合一次性导入或批量摆盘检查。
 
 `output/` 是生成产物，已在 `.gitignore` 中排除；仓库只跟踪生成脚本和说明文档。
 

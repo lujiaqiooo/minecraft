@@ -14,6 +14,10 @@ from cadquery import exporters
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output"
 MODEL_PREFIX = "hhkb-topre-hhkb-style"
+COMBINED_MODEL_NAME = f"{MODEL_PREFIX}-hhkb-us-11-types-fit-nominal"
+COMBINED_MAX_ROW_WIDTH = 220.00
+COMBINED_KEY_GAP = 8.00
+COMBINED_ROW_GAP = 18.00
 CORE_3MF_NS = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
 
 
@@ -332,51 +336,59 @@ def weld_3mf_vertices(path: Path, precision: int = 6) -> dict[str, int]:
         entries = {info.filename: source.read(info.filename) for info in source.infolist()}
 
     root = ET.fromstring(entries["3D/3dmodel.model"])
-    mesh = root.find(f".//{tag('mesh')}")
-    if mesh is None:
+    meshes = root.findall(f".//{tag('mesh')}")
+    if not meshes:
         raise ValueError(f"No mesh found in {path}")
 
-    vertices_node = mesh.find(tag("vertices"))
-    triangles_node = mesh.find(tag("triangles"))
-    if vertices_node is None or triangles_node is None:
-        raise ValueError(f"No vertices/triangles found in {path}")
+    original_vertex_count = 0
+    welded_vertex_count = 0
+    triangle_count = 0
+    for mesh in meshes:
+        vertices_node = mesh.find(tag("vertices"))
+        triangles_node = mesh.find(tag("triangles"))
+        if vertices_node is None or triangles_node is None:
+            raise ValueError(f"No vertices/triangles found in {path}")
 
-    original_vertices = []
-    for vertex in vertices_node.findall(tag("vertex")):
-        original_vertices.append(tuple(float(vertex.attrib[axis]) for axis in ("x", "y", "z")))
+        original_vertices = []
+        for vertex in vertices_node.findall(tag("vertex")):
+            original_vertices.append(tuple(float(vertex.attrib[axis]) for axis in ("x", "y", "z")))
 
-    coordinate_to_new_id: dict[tuple[float, float, float], int] = {}
-    old_to_new_id: list[int] = []
-    welded_vertices: list[tuple[float, float, float]] = []
+        coordinate_to_new_id: dict[tuple[float, float, float], int] = {}
+        old_to_new_id: list[int] = []
+        welded_vertices: list[tuple[float, float, float]] = []
 
-    for coords in original_vertices:
-        key = tuple(round(value, precision) for value in coords)
-        if key not in coordinate_to_new_id:
-            coordinate_to_new_id[key] = len(welded_vertices)
-            welded_vertices.append(coords)
-        old_to_new_id.append(coordinate_to_new_id[key])
+        for coords in original_vertices:
+            key = tuple(round(value, precision) for value in coords)
+            if key not in coordinate_to_new_id:
+                coordinate_to_new_id[key] = len(welded_vertices)
+                welded_vertices.append(coords)
+            old_to_new_id.append(coordinate_to_new_id[key])
 
-    welded_triangles: list[tuple[int, int, int]] = []
-    for triangle in triangles_node.findall(tag("triangle")):
-        mapped = tuple(old_to_new_id[int(triangle.attrib[index])] for index in ("v1", "v2", "v3"))
-        if len(set(mapped)) == 3:
-            welded_triangles.append(mapped)
+        welded_triangles: list[tuple[int, int, int]] = []
+        for triangle in triangles_node.findall(tag("triangle")):
+            mapped = tuple(old_to_new_id[int(triangle.attrib[index])] for index in ("v1", "v2", "v3"))
+            if len(set(mapped)) == 3:
+                welded_triangles.append(mapped)
 
-    vertices_node.clear()
-    for coords in welded_vertices:
-        ET.SubElement(
-            vertices_node,
-            tag("vertex"),
-            {axis: f"{value:.6f}".rstrip("0").rstrip(".") for axis, value in zip(("x", "y", "z"), coords)},
-        )
+        vertices_node.clear()
+        for coords in welded_vertices:
+            ET.SubElement(
+                vertices_node,
+                tag("vertex"),
+                {axis: f"{value:.6f}".rstrip("0").rstrip(".") for axis, value in zip(("x", "y", "z"), coords)},
+            )
 
-    triangles_node.clear()
-    for v1, v2, v3 in welded_triangles:
-        ET.SubElement(
-            triangles_node,
-            tag("triangle"),
-            {"v1": str(v1), "v2": str(v2), "v3": str(v3)},
-        )
+        triangles_node.clear()
+        for v1, v2, v3 in welded_triangles:
+            ET.SubElement(
+                triangles_node,
+                tag("triangle"),
+                {"v1": str(v1), "v2": str(v2), "v3": str(v3)},
+            )
+
+        original_vertex_count += len(original_vertices)
+        welded_vertex_count += len(welded_vertices)
+        triangle_count += len(welded_triangles)
 
     ET.register_namespace("", CORE_3MF_NS)
     entries["3D/3dmodel.model"] = ET.tostring(root, encoding="utf-8", xml_declaration=True)
@@ -388,9 +400,9 @@ def weld_3mf_vertices(path: Path, precision: int = 6) -> dict[str, int]:
     tmp_path.replace(path)
 
     return {
-        "original_vertices": len(original_vertices),
-        "welded_vertices": len(welded_vertices),
-        "triangles": len(welded_triangles),
+        "original_vertices": original_vertex_count,
+        "welded_vertices": welded_vertex_count,
+        "triangles": triangle_count,
     }
 
 
@@ -429,6 +441,45 @@ def export_variants(specs: list[KeycapSpec]) -> list[dict[str, float | str]]:
     return manifest
 
 
+def build_combined_keycaps(specs: list[KeycapSpec], fit_delta: float) -> cq.Workplane:
+    combined = cq.Workplane("XY")
+    x_cursor = 0.00
+    y_cursor = 0.00
+    row_depth = max(spec.bottom_depth for spec in specs) + COMBINED_ROW_GAP
+
+    for spec in specs:
+        key_width = spec.bottom_width
+        if x_cursor and (x_cursor + key_width) > COMBINED_MAX_ROW_WIDTH:
+            x_cursor = 0.00
+            y_cursor -= row_depth
+
+        positioned = build_keycap(spec, fit_delta).translate((x_cursor + (key_width / 2), y_cursor, 0))
+        combined = combined.add(positioned)
+        x_cursor += key_width + COMBINED_KEY_GAP
+
+    return combined
+
+
+def export_combined_3mf(specs: list[KeycapSpec]) -> dict[str, float | str]:
+    fit_delta = FIT_VARIANTS["fit-nominal"]
+    threemf_path = OUTPUT_DIR / f"{COMBINED_MODEL_NAME}.3mf"
+    exporters.export(build_combined_keycaps(specs, fit_delta), str(threemf_path))
+    weld_stats = weld_3mf_vertices(threemf_path)
+    return {
+        "name": COMBINED_MODEL_NAME,
+        "variant": "fit-nominal",
+        "fit_delta_mm": fit_delta,
+        "3mf": threemf_path.name,
+        "shape_count": len(specs),
+        "layout": "packed rows",
+        "max_row_width_mm": COMBINED_MAX_ROW_WIDTH,
+        "key_gap_mm": COMBINED_KEY_GAP,
+        "row_gap_mm": COMBINED_ROW_GAP,
+        "welded_vertices": weld_stats["welded_vertices"],
+        "triangles": weld_stats["triangles"],
+    }
+
+
 def cleanup_previous_exports() -> None:
     for path in OUTPUT_DIR.glob(f"{MODEL_PREFIX}-*.3mf"):
         path.unlink()
@@ -437,7 +488,11 @@ def cleanup_previous_exports() -> None:
         manifest_path.unlink()
 
 
-def write_manifest(specs: list[KeycapSpec], manifest: list[dict[str, float | str]]) -> None:
+def write_manifest(
+    specs: list[KeycapSpec],
+    manifest: list[dict[str, float | str]],
+    combined_manifest: dict[str, float | str],
+) -> None:
     base_spec = KeycapSpec()
     payload = {
         "model": base_spec.name_prefix,
@@ -471,9 +526,11 @@ def write_manifest(specs: list[KeycapSpec], manifest: list[dict[str, float | str
             },
         },
         "variants": manifest,
+        "combined": combined_manifest,
         "notes": [
             "Exports include HHKB common key shapes adapted from fernandodeperto/topre_key dimensions.",
             "Each HHKB US geometry is exported once with nominal Topre connector clearance.",
+            "The combined 3MF places all 11 HHKB US geometry types into one file for batch import or printing.",
             "fernandodeperto/topre_key only implements one centered Topre connector; wide keys follow that scope and do not add OEM HHKB stabilizers.",
             "KeyV2 stabilized wide-key helpers target Cherry/Costar stabilizers and are intentionally not mixed into this Topre connector model.",
             "3MF vertices are welded after export to avoid non-manifold imports in Bambu Studio.",
@@ -489,8 +546,9 @@ def write_manifest(specs: list[KeycapSpec], manifest: list[dict[str, float | str
 def main() -> None:
     specs = [spec_for_shape(shape_name) for shape_name in HHKB_SHAPES]
     manifest = export_variants(specs)
-    write_manifest(specs, manifest)
-    print(f"Exported {len(manifest)} keycap variants to {OUTPUT_DIR}")
+    combined_manifest = export_combined_3mf(specs)
+    write_manifest(specs, manifest, combined_manifest)
+    print(f"Exported {len(manifest)} keycap variants and 1 combined 3MF to {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
