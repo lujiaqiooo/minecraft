@@ -16,14 +16,17 @@
 
 ## 支持的键帽形状
 
-当前会生成 8 种 HHKB 常见形状：
+当前会生成 HHKB US 配列需要的 11 种几何类型。每种类型导出 `fit-loose`、`fit-nominal`、`fit-tight` 三档试配版，因此本地 `output/` 里会生成 33 个 `.3mf` 文件。
 
-- `row-c-1u`：通用 1u / home row 试配键
+- `row-e-1u`：顶排 Esc / 数字 / 符号区 1u
+- `row-d-1u`：QWERTY 排普通 1u
 - `tab-1_5u-row-d`：Tab / Delete 尺寸
+- `row-c-1u`：ASDF 排普通 1u
 - `control-1_75u-row-c`：Control 尺寸
-- `backspace-2u-row-e`：2u 宽键原型
 - `return-2_25u-row-c`：Return 尺寸
-- `shift-2_25u-row-b`：左 Shift 尺寸
+- `row-b-1u`：ZXCV 排普通 1u / Fn
+- `rshift-1_75u-row-b`：右 Shift 尺寸
+- `lshift-2_25u-row-b`：左 Shift 尺寸
 - `mod-1_5u-row-a`：底排 Alt / Cmd 尺寸
 - `space-6u-row-a`：6u Space 原型
 
@@ -49,6 +52,8 @@ UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python cadquery
 
 - `output/*.3mf`：可导入 Bambu Studio / OrcaSlicer 的模型文件
 - `output/hhkb-topre-hhkb-style-manifest.json`：本次导出的参数和文件清单
+
+`output/` 是生成产物，已在 `.gitignore` 中排除；仓库只跟踪生成脚本和说明文档。
 
 ## 打印建议
 

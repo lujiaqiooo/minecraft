@@ -13,6 +13,7 @@ from cadquery import exporters
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output"
+MODEL_PREFIX = "hhkb-topre-hhkb-style"
 CORE_3MF_NS = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
 
 
@@ -27,7 +28,7 @@ TOPRE_KEY_ROW_DIMENSIONS = {
 
 @dataclass(frozen=True)
 class KeycapSpec:
-    name_prefix: str = "hhkb-topre-hhkb-style"
+    name_prefix: str = MODEL_PREFIX
     shape_name: str = "row-c-1u"
     row_name: str = "row-c"
     key_length: float = 1.00
@@ -133,14 +134,17 @@ class KeycapSpec:
 
 
 HHKB_SHAPES = {
-    "row-c-1u": {"row_name": "row-c", "key_length": 1.00, "description": "generic 1u home-row fit test"},
-    "tab-1_5u-row-d": {"row_name": "row-d", "key_length": 1.50, "description": "HHKB Tab/Delete sized key"},
-    "control-1_75u-row-c": {"row_name": "row-c", "key_length": 1.75, "description": "HHKB Control sized key"},
-    "backspace-2u-row-e": {"row_name": "row-e", "key_length": 2.00, "description": "2u wide key prototype"},
-    "return-2_25u-row-c": {"row_name": "row-c", "key_length": 2.25, "description": "HHKB Return sized key"},
-    "shift-2_25u-row-b": {"row_name": "row-b", "key_length": 2.25, "description": "HHKB left Shift sized key"},
-    "mod-1_5u-row-a": {"row_name": "row-a", "key_length": 1.50, "description": "HHKB bottom-row Alt/Cmd sized key"},
-    "space-6u-row-a": {"row_name": "row-a", "key_length": 6.00, "description": "HHKB 6u Space prototype"},
+    "row-e-1u": {"row_name": "row-e", "key_length": 1.00, "description": "HHKB US number-row 1u key"},
+    "row-d-1u": {"row_name": "row-d", "key_length": 1.00, "description": "HHKB US Q-row 1u key"},
+    "tab-1_5u-row-d": {"row_name": "row-d", "key_length": 1.50, "description": "HHKB US Tab/Delete sized key"},
+    "row-c-1u": {"row_name": "row-c", "key_length": 1.00, "description": "HHKB US A-row 1u key"},
+    "control-1_75u-row-c": {"row_name": "row-c", "key_length": 1.75, "description": "HHKB US Control sized key"},
+    "return-2_25u-row-c": {"row_name": "row-c", "key_length": 2.25, "description": "HHKB US Return sized key"},
+    "row-b-1u": {"row_name": "row-b", "key_length": 1.00, "description": "HHKB US Z-row 1u key"},
+    "rshift-1_75u-row-b": {"row_name": "row-b", "key_length": 1.75, "description": "HHKB US right Shift sized key"},
+    "lshift-2_25u-row-b": {"row_name": "row-b", "key_length": 2.25, "description": "HHKB US left Shift sized key"},
+    "mod-1_5u-row-a": {"row_name": "row-a", "key_length": 1.50, "description": "HHKB US bottom-row modifier sized key"},
+    "space-6u-row-a": {"row_name": "row-a", "key_length": 6.00, "description": "HHKB US 6u Space prototype"},
 }
 
 
@@ -394,6 +398,7 @@ def weld_3mf_vertices(path: Path, precision: int = 6) -> dict[str, int]:
 
 def export_variants(specs: list[KeycapSpec]) -> list[dict[str, float | str]]:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    cleanup_previous_exports()
 
     manifest: list[dict[str, float | str]] = []
     for spec in specs:
@@ -424,6 +429,14 @@ def export_variants(specs: list[KeycapSpec]) -> list[dict[str, float | str]]:
             )
 
     return manifest
+
+
+def cleanup_previous_exports() -> None:
+    for path in OUTPUT_DIR.glob(f"{MODEL_PREFIX}-*.3mf"):
+        path.unlink()
+    manifest_path = OUTPUT_DIR / f"{MODEL_PREFIX}-manifest.json"
+    if manifest_path.exists():
+        manifest_path.unlink()
 
 
 def write_manifest(specs: list[KeycapSpec], manifest: list[dict[str, float | str]]) -> None:
